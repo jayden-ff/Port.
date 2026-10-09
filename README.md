@@ -1,69 +1,105 @@
 # Port.
 
-Ein minimalistisches Portfolio-Dashboard mit persönlichen Nachrichten, CSV-Import, manuellen Positionen und lokal gespeicherter Merkliste. React, Vite, Framer Motion und ein kleiner Node-RSS-Endpunkt. Die Website ist auf Deutsch und funktioniert auf Desktop und Mobilgeräten.
+Ein Portfolio-Dashboard mit manuell erfassten Aktien, ETFs und Kryptowährungen, echten Kursen, relevanten RSS-Nachrichten und einem Risikoblick für isolierte, lineare Hebelpositionen. React/Vite, cremefarbene Oberfläche, grüne Akzente und Animationen mit Unterstützung für reduzierte Bewegung.
+
+## Was funktioniert
+
+- Leerer Start ohne Demo-Positionen oder erfundene Nachrichten. Alte Demo-Portfolios werden entfernt; tatsächlich importierte Altbestände werden übernommen.
+- Positionen hinzufügen, bearbeiten, löschen und per CSV importieren. Die Depotnamen Trade Republic, Robinhood, Revolut und Fomo kennzeichnen die Herkunft; sie sind keine automatischen Brokerverbindungen.
+- Aktien/ETFs über Yahoo Finance, Krypto über CoinGecko; Coinbase ist für unterstützte Coins ein Ersatzanbieter. Kurswährung und tatsächliche Kurszeit bleiben sichtbar. Frankfurter/EZB liefert tägliche Referenzkurse zur EUR-Umrechnung.
+- Ein gemeinsames Backend für alle Besucher. Keine persönlichen Markt-API-Schlüssel und keine Zugangsdaten im Frontend.
+- Passende Originalmeldungen aus Google News RSS mit Quelle, Veröffentlichungszeit, Filtern, Suche und lokaler Merkliste. Zuordnung nach Unternehmen, Coin-Namen, Kürzeln oder Makrothemen; Relevanz nach Brutto-Exposure.
+- Spot sowie isolierte lineare Long-/Short-Positionen: Einstieg, Währung, Margin, Hebel und optional ein eingetragener Liquidationspreis. Stattdessen ist eine ausdrücklich gekennzeichnete Schätzung möglich.
+- Positionen, Merkliste und Kurscache bleiben im Browser. Nur Asset-Kürzel, Coin-IDs und Namen werden an das Backend bzw. Anbieter gesendet; Stückzahlen, Margin und Einstieg werden lokal verarbeitet.
+
+Es gibt keinen kostenlosen Dienst mit garantierten Echtzeitkursen für sämtliche Aktien, Börsen und Kryptowährungen. Die öffentliche Yahoo-Schnittstelle ist inoffiziell und kann sich ändern oder Abfragen ablehnen. CoinGecko und Coinbase können Limits setzen. RSS-Indexierung kann verzögert sein. Die Seite fragt Kurse und Nachrichten jede Minute ab; das ist keine garantierte Echtzeit. Fehlende Kurse werden nicht durch Einstiegspreise ersetzt, Teilbewertungen werden gekennzeichnet und alte Abrufe bleiben erkennbar. Marktquoten sind keine ausführbaren Brokerkurse oder Liquidations-Markpreise.
 
 ## Entwicklung
 
-Node.js 22.12+ (hier getestet mit 24.19.0) und npm.
+Node.js >=22.12, npm:
 
 ```sh
-cd /workspace/Port.
 npm ci
+npm test
 npm run dev
 ```
 
-Der Entwicklungsserver läuft auf Port 5173 und bedient auch `/api/news`. Fonts werden lokal ausgeliefert. Kein Login und keine Zugangsdaten erforderlich.
+Vite auf Port 5173 liefert das Frontend und die gemeinsame API unter `/api`. `npm run build` und `npm start` starten den Produktionsserver auf Port 3000 (`PORT` optional). Serverabrufe nutzen `undici` mit `EnvHttpProxyAgent`, also auch eine konfigurierte HTTPS-Proxy-Umgebung mit bestehender CA-Verifikation.
 
 ```sh
-npm test
-npm run build
-npm start
+curl -fsS http://127.0.0.1:5173/api/health
+curl -fsS 'http://127.0.0.1:5173/api/quotes?assets=stock:AAPL,stock:SAP.DE,crypto:bitcoin'
+curl -fsS 'http://127.0.0.1:5173/api/news?symbols=AAPL,BTC'
 ```
 
-Der Produktionsserver bedient `dist/` und die Nachrichten-API auf Port 3000; `PORT` kann überschrieben werden. Alternativ startet `npm run preview` auf Port 4173, ebenfalls mit der Nachrichten-API. Ein reiner statischer Host benötigt einen gesonderten API-Server bzw. eine Anpassung des API-Pfads.
+`npm test` führt deterministische Tests der Berechnungen, CSV-Verarbeitung, RSS-Normalisierung, Cache-Verwendung und API-Grenzen aus. Mit Python Playwright und Chromium sind zusätzlich verfügbar:
 
-## Portfolioimport
+```sh
+python tests/browser_smoke.py
+python tests/live_backend.py
+```
 
-Im Dialog „Portfolio hinzufügen“ die Quelle wählen: Trade Republic, Robinhood, Revolut, Fomo oder eine andere Quelle. Diese Angaben sind lokale Quellennamen; es gibt noch keine OAuth- oder direkten Brokeranbindungen.
+Der erste Browsercheck nutzt kontrollierte API-Antworten und prüft Bedienung, Long/Short, Fehlerfälle, lokale Speicherung, mobile Navigation und Layouts. Der zweite prüft echte Anbieterabrufe und die Darstellung ohne Browser-Fixtures. Die externen Quellen müssen erreichbar sein. `PORT_BASE_URL` und `CHROMIUM_PATH` können überschrieben werden. Zertifikatsprüfung wird nicht deaktiviert.
 
-Ein kompatibler Export enthält `symbol,quantity,price` oder `ticker,anzahl,kurs`. Komma oder Semikolon als Trennzeichen; deutsche Dezimalwerte müssen bei Kommatrennung in Anführungszeichen stehen. Alle Kurse in EUR. Native Brokerexporte müssen bei abweichenden Formaten zunächst in dieses Schema gebracht werden. Eine Beispieldatei liegt in `public/portfolio-beispiel.csv` und ist im Importdialog downloadbar.
+## Gemeinsames Backend auf Cloudflare Workers
 
-Beim ersten Import verschwinden die Demopositionen. Weitere CSV-Importe ersetzen nur dieselbe Quelle. Doppelte Kürzel innerhalb einer Quelle werden mit gewichtetem Kurs zusammengeführt. Manuelle Eingaben ergänzen die Quelle. Kurse sind Werte aus dem Import, keine aktuellen Marktpreise. Importierte Portfolios zeigen daher eine Verteilung statt eines erfundenen historischen Verlaufs.
+GitHub Pages kann nur statische Dateien ausliefern. `worker/index.js` enthält deshalb einen separaten, kostenlosen Worker für die Datenabrufe. Er speichert keine Nutzerportfolios und benötigt für die verwendeten Marktquellen keinen Markt-API-Schlüssel.
 
-Positionen, Merkliste und der lokale Feed-Hinweis werden in `localStorage` gespeichert. Es gibt noch keine Konten, geräteübergreifende Synchronisation, automatischen Depotabgleich, Push-Nachrichten oder Orderausführung.
+Für das Deployment werden ein Cloudflare-Konto, dessen Account-ID und ein API-Token benötigt. Der Token sollte auf dieses Konto begrenzt sein und **Account / Workers Scripts / Edit** sowie **Account / Account Settings / Read** erlauben. Zugangsdaten sicher in den Umgebungseinstellungen oder einem Secret Store setzen; niemals in Chat, Git, `.env.example`, `public/backend.json` oder `VITE_*` eintragen.
 
-## Nachrichten
+```sh
+npm run build:api
+npm run deploy:api
+```
 
-„Live abrufen“ aktiviert `/api/news?symbols=NVDA,AAPL`. Der Server fragt Google News RSS über verifiziertes HTTPS ab, berücksichtigt die Proxyvariablen der Umgebung und hält Ergebnisse maximal 55 Sekunden im Cache. Der Browser fragt jede Minute nach. Die Abfrage umfasst die ersten 15 eindeutigen Kürzel des Portfolios und die letzten zwei Tage. Eine Abfrage pro Minute garantiert keine Echtzeit: Aktualität und Verzögerung hängen vom RSS-Index ab.
+Das Deployment liest `CLOUDFLARE_API_TOKEN` und `CLOUDFLARE_ACCOUNT_ID`. `build:api` erstellt nur das Worker-Bundle, ohne etwas zu veröffentlichen. Die CLI verwendet einen lokalen, ignorierten Konfigurationsordner `.wrangler/`, damit sie in eingeschränkten Cloud-Umgebungen funktioniert. Cloudflare nennt beim Deployment die tatsächliche `https://port-market-api.<subdomain>.workers.dev`-Adresse. Prüfe dort `/health`, `/quotes` und `/news`, bevor die Seite diese Adresse verwendet. Ein lokaler Test beweist nicht, dass die Anbieter aus Cloudflares Netzwerk erreichbar sind.
 
-Benötigte Netzwerkfreigabe: **news.google.com**. Ohne diese Freigabe zeigt die Oberfläche einen Verbindungsfehler. Es werden keine fiktiven Meldungen als aktuelle Nachrichten ausgegeben. Die Demomeldungen sind ausdrücklich gekennzeichnet.
+`wrangler.jsonc` erlaubt CORS für `https://jayden-ff.github.io`. Bei einem anderen Frontend-Host `ALLOWED_ORIGINS` anpassen. CORS ist kein Zugangsschutz; die Read-only-API ist öffentlich. Cache und Abfragegrößen begrenzen Anbieterlast. Ein zusätzliches Limit von 120 Abrufen/IP/Minute gilt je laufender Worker-Isolate; es ist kein globaler Quotaschutz. Cloudflare-Free-Kontingente und Anbieterlimits gelten weiterhin. Keine automatischen Wechsel auf kostenpflichtige Tarife.
 
-Unternehmen und Kürzel im Titel bestimmen die Zuordnung. Erkannte Zins-/Inflationsmeldungen werden dem gesamten Portfolio zugeordnet. Der Relevanzwert ist `55 + 44 × betroffener Portfolioanteil` (maximal 99), ein einfacher Orientierungswert. Es gibt keine Sentimentanalyse, Kursprognose oder Anlageempfehlung. Vollständige Artikel werden über die externe Quelle geöffnet.
+API-Endpunkte:
 
-Beim Live-Abruf werden Unternehmensnamen und Kürzel an den Nachrichtenindex übermittelt; Stückzahlen und Kurse bleiben im Browser. RSS wird vor dem Rendern auf Text, HTTPS-Links und gültige Datumsangaben normalisiert. Keine Secret-Werte erforderlich.
+| Endpunkt | Zweck |
+| --- | --- |
+| `/health` | Dienstkennung und Konfiguration |
+| `/quotes?assets=stock:AAPL,crypto:bitcoin` | maximal 30 eindeutige Assets, Kurse und Fehler je Asset |
+| `/search?type=stock&q=Apple` | Aktie/ETF oder `type=crypto` suchen |
+| `/news?symbols=AAPL,BTC&names={...}` | maximal 15 Kürzel mit optionalen Namen; echte RSS-Meldungen |
+| `/fx` | EZB-Referenzkurse mit Referenzdatum |
 
-## Validierung
-
-`npm test` prüft CSV-Formate, fehlerhafte Eingaben, Positionszusammenführung, Relevanzberechnung, RSS-Zuordnung und API-Eingabevalidierung. Der Build und Browserabläufe für Import, Merkliste, Filter, Modaldialoge und mobile Navigation werden zusätzlich geprüft.
-
-Die Sites-App ist in dieser Sitzung nicht verfügbar; es wurde keine Website dort veröffentlicht. Für echte Direktanbindungen sind ein geeigneter Aggregator bzw. offizielle Anbieter-APIs, ein Backend, sichere Authentifizierung und ein Datenanbieter auszuwählen.
+Große Portfolios werden im Client in begrenzten Gruppen abgefragt. Erfolgreiche Ergebnisse bleiben bei Teilfehlern erhalten. Der Server akzeptiert nur feste Anbieterziele und validierte Suchparameter; er ist kein beliebiger URL-Proxy.
 
 ## GitHub Pages
+
+Öffentliche Seite: <https://jayden-ff.github.io/Port./>
+
+Die gemeinsame Backend-Adresse kann vor dem Build als öffentliche `VITE_API_BASE_URL` gesetzt werden. Alternativ in `public/backend.json` `apiBaseUrl` auf die echte HTTPS-Adresse setzen. Diese Adresse ist öffentlich und enthält keine Secrets. Besucher verwenden automatisch den gemeinsamen Dienst. Ein eigener kompatibler Dienst lässt sich optional unter Einstellungen verbinden.
 
 ```sh
 npm run deploy:pages
 ```
 
-Dieses Kommando erstellt den statischen Pages-Build mit dem Basispfad `/Port./` und lädt ausschließlich `dist/` in den Branch `gh-pages` hoch. Es verwendet vorhandene Git-Authentifizierung, erzwingt keinen Push und verändert den Checkout nicht. Ein bestehender `CNAME` bleibt erhalten. Fremde `gh-pages`-Inhalte ohne die Port.-Buildmarkierung werden nicht überschrieben. Nur bauen: `npm run build:pages`.
+Das Skript erstellt den Build mit Basis `/Port./` und aktualisiert `gh-pages`. Es erhält CNAME, verwendet keinen Force-Push und überschreibt nur einen Branch, der durch `.port-pages` als eigener Build erkennbar ist. In GitHub Settings → Pages muss `gh-pages / (root)` als Quelle gewählt sein. `main` enthält den Quellcode; `gh-pages` enthält die statischen Dateien.
 
-Im Repository unter **Settings → Pages** als Quelle **Deploy from a branch**, Branch **gh-pages**, Ordner **/ (root)** auswählen und speichern. Die Seite ist nach erfolgreicher Bereitstellung unter `https://jayden-ff.github.io/Port./` erreichbar. Die GitHub-Verbindung dieser Cloud-Sitzung kann Code und den Build hochladen, hat jedoch keine Pages-Verwaltungsrechte (die Pages-API meldet HTTP 403). Die Aktivierung muss deshalb in den GitHub-Einstellungen erfolgen. Für private Repositories muss der GitHub-Tarif Pages unterstützen; das Repository wird vom Veröffentlichungsskript nicht auf öffentlich umgestellt.
+**Aktueller Zustand:** Das Backend ist vorbereitet und lokal mit echten Daten geprüft, aber ohne Cloudflare-Zugangsdaten noch nicht öffentlich deployt. `public/backend.json` enthält deshalb `null`. Auf Pages funktionieren manuelle Positionen und Schlüssel-freie Kryptokurse bereits; Aktienkurse und News benötigen die einmalige Backend-Veröffentlichung. Dieser Zustand wird im Produkt sichtbar dargestellt.
 
-GitHub Pages führt den Node-Nachrichtenserver nicht aus. Dieser Build zeigt deshalb „Live-Feed: nicht verbunden“ und ruft keine fehlende `/api/news`-Route ab. CSV-Import, manuelle Positionen, Merkliste und Beispiele funktionieren. Der normale Node-/Vite-Build behält seine lokale Nachrichten-API.
+## Positionen und CSV
 
-Ein separat gehosteter Nachrichtendienst kann beim Pages-Build mit einer öffentlichen, nicht geheimen HTTPS-Endpunkt-URL konfiguriert werden:
+`public/portfolio-beispiel.csv` ist ausschließlich eine herunterladbare Formatvorlage und wird niemals automatisch als Portfolio geladen. Ersetze die Beispielzeilen durch deine eigenen Trades.
 
-```sh
-VITE_NEWS_API_URL=https://feed.example.com/api/news npm run deploy:pages
-```
+Pflichtfelder für Spot: `symbol,quantity,entry_price` (`price` wird ebenfalls als Einstieg akzeptiert). Optional: `currency` (Standard EUR), `asset_type` (`stock` oder `crypto`), `coin_id`. Für Margin: `kind=margin,direction=long|short,margin,leverage`, optional `liquidation_price` oder `liquidation_mode=estimate,maintenance_margin` (Prozent). Margin und Einstieg stehen in der ausgewählten Positionswährung. Stückzahl wird bei linearen Margin-Positionen aus `margin × leverage / entry_price` abgeleitet.
 
-Der Dienst benötigt das gleiche JSON-Format wie `server/news.js` und muss Browserzugriffe von `https://jayden-ff.github.io` per CORS erlauben. Die URL wird im öffentlichen Build sichtbar; keine Zugangsdaten hineinlegen. Ohne expliziten Dienst werden keine Firmennamen oder Kürzel an einen externen Feed geschickt.
+Mehrere Spot-Zeilen desselben Assets in gleicher Währung werden mit gewichtetem Einstieg zusammengefasst. Margin-Trades bleiben getrennt. Ein CSV-Import ersetzt alle lokal erfassten Positionen der ausgewählten Depotquelle. Ungültige Dateien ändern nichts.
+
+## Berechnung und Liquidation
+
+Für Stückzahl `q`, Einstieg `E`, Referenzkurs `P`, isolierte Margin `M` und Richtung `d` (+1 Long, −1 Short):
+
+- Unrealisierter Gewinn: `d × q × (P − E)`.
+- Spot-Wert: `q × P`; Margin-Eigenkapital: `M + unrealisierter Gewinn`.
+- Exposure: `q × P`. Es wird separat vom Eigenkapital angezeigt.
+- Modellschwelle mit konstantem Maintenance-Satz `m`: Long `E × (1 − 1/L) / (1 − m)`; Short `E × (1 + 1/L) / (1 + m)`.
+- Abstand: Long `(P − Schwelle) / P`; Short `(Schwelle − P) / P`.
+
+Ein eingetragener Anbieterpreis hat Vorrang. Ohne Kurs oder manuelle Schwelle wird kein Abstand erfunden. Unter 5% Abstand erscheint ein Hinweis; bei berührter Schwelle muss der Anbieterstatus überprüft werden. Bereits liquidierte Positionen müssen manuell angepasst werden.
+
+Das Modell umfasst keine Cross-Margin, inversen Kontrakte, Optionen, Knock-outs, Finanzierung, Funding, Zinsen, Gebühren oder gestaffelte Maintenance-Sätze. Anbieter nutzen eigene Markpreise und Regeln. Hinweise in der geöffneten Seite sind keine Push-Benachrichtigungen oder Brokerüberwachung. Für den Gewinn werden keine Gebühren oder Finanzierungskosten behauptet; EUR-Werte verwenden die tägliche FX-Referenz, keine historischen Einstieg-Wechselkurse.

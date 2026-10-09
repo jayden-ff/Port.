@@ -1,13 +1,6 @@
 import Papa from 'papaparse';
 
 export const companyNames = { NVDA: 'NVIDIA', AAPL: 'Apple', MSFT: 'Microsoft', TSLA: 'Tesla', AMZN: 'Amazon', GOOGL: 'Alphabet', META: 'Meta', AMD: 'AMD', SAP: 'SAP', BTC: 'Bitcoin', V: 'Visa', NFLX: 'Netflix', ASML: 'ASML', SPY: 'S&P 500 ETF', VWCE: 'FTSE All-World ETF' };
-export const demoHoldings = [
-  { symbol: 'NVDA', name: 'NVIDIA', quantity: 120, price: 142.87, change: 3.42, broker: 'Trade Republic', color: '#76a35a' },
-  { symbol: 'AAPL', name: 'Apple', quantity: 50, price: 224.72, change: 1.18, broker: 'Trade Republic', color: '#7f8a94' },
-  { symbol: 'MSFT', name: 'Microsoft', quantity: 25, price: 428.52, change: 0.86, broker: 'Revolut', color: '#81a5d3' },
-  { symbol: 'TSLA', name: 'Tesla', quantity: 20, price: 248.5, change: -1.24, broker: 'Robinhood', color: '#ce8c74' },
-  { symbol: 'AMZN', name: 'Amazon', quantity: 20, price: 186.3, change: 1.72, broker: 'Revolut', color: '#d4ba78' },
-];
 const colors = ['#76a35a', '#81a5d3', '#ce8c74', '#d4ba78', '#aa96c5'];
 export const euro = (value, decimals = 2) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
 export const totalValue = holdings => holdings.reduce((sum, h) => sum + h.quantity * h.price, 0);

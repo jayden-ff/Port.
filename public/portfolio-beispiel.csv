@@ -1,4 +1,5 @@
-symbol,quantity,price
-NVDA,10,142.87
-AAPL,5,224.72
-MSFT,3,428.52
+symbol,quantity,entry_price,currency,asset_type,coin_id,kind,direction,margin,leverage,liquidation_mode,liquidation_price,maintenance_margin
+AAPL,2,200,USD,stock,,spot,long,,,,,
+BTC,0.01,80000,EUR,crypto,bitcoin,spot,long,,,,,
+ETH,,2500,EUR,crypto,ethereum,margin,long,100,5,manual,2100,
+ETH,,2500,EUR,crypto,ethereum,margin,short,100,3,estimate,,0.5

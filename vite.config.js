@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { apiRouter } from './server/news.js';
+import { apiRouter } from './server/api.js';
 
 export default defineConfig(({ mode }) => ({
   base: mode === 'pages' ? '/Port./' : '/',

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeFeed, apiRouter } from '../server/news.js';
+import { normalizeFeed, apiRouter } from '../server/api.js';
 
 const xml = `<rss><channel>
 <item><title>NVIDIA: neue KI-Chips - Testquelle</title><link>https://news.google.com/rss/articles/one</link><guid>one</guid><pubDate>Fri, 09 Oct 2026 12:00:00 GMT</pubDate><source>Testquelle</source></item>

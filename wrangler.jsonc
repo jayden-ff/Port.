@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "port-market-api",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "vars": { "ALLOWED_ORIGINS": "https://jayden-ff.github.io" },
+  "limits": { "cpu_ms": 10 },
+  "observability": { "enabled": false }
+}
