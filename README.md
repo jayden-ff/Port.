@@ -70,8 +70,19 @@ npm test
 python tests/browser.py
 python tests/routes.py
 python tests/edge_cases.py
+python tests/navigation.py
+python tests/recovery.py
+python tests/responsive.py
 ```
 
 Browser checks require Python Playwright and Chromium at `/usr/bin/chromium`, with `npm start` running. `PORT_BASE_URL` selects another served path for the main browser suite. Checks cover four viewport widths, all lessons, answer retries, experiments, notes, bookmarks, persistence, route failures and reduced motion. See `docs/QA.md` for results and limits. Device emulation is not a substitute for a physical iPhone/Android and Safari check.
 
 Progress is browser-local, not authenticated, so XP is motivational and not a credential. Clear browser data and the local record is lost unless exported. There is no cloud sync or service-worker offline installation.
+
+## Finding your way around
+
+Home, Classes, Notebook and Profile are available from the main navigation. Every lesson also has a persistent navigation row, a **Switch lesson** selector grouped by class, a class breadcrumb and Explore / Understand / Challenge stage links. The URL records the lesson stage so browser Back/Forward works naturally. Existing `#progress` links still open the profile.
+
+Your current stage, selected quiz answers, accepted answers, notes and last active lesson are stored locally. The dashboard resumes the last unfinished activity. Bookmarking and changing motion settings leave experiment controls and quiz feedback intact. Completing the collection shows review options instead of pretending the first lesson is new.
+
+The profile has an optional local display name, progress totals, motion preference and progress export/import. It is not a server account. If browser storage is unavailable, a persistent message explains session-only learning and points to export. Numeric questions accept decimal points or commas and provide a **±** control for phone keyboards.

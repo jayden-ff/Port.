@@ -1,0 +1,33 @@
+from playwright.sync_api import sync_playwright,expect
+import os,json
+base=os.environ.get('PORT_BASE_URL','http://127.0.0.1:4173').rstrip('/')
+with sync_playwright() as p:
+ b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+ page=b.new_page(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
+ page.set_default_timeout(5000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+ page.goto(base+'/#lesson/attention')
+ expect(page.get_by_role('navigation',name='Lesson navigation')).to_be_visible()
+ expect(page.get_by_label('Switch lesson')).to_be_visible()
+ page.get_by_label('Switch lesson').select_option('classification');expect(page.locator('h1')).to_have_text('From scores to probabilities')
+ slider=page.locator('#weight');slider.fill('3');page.get_by_role('button',name='Save lesson',exact=True).click();expect(slider).to_have_value('3')
+ page.get_by_role('button',name='Explore the theory').click();page.locator('#lesson-note').fill('Remember the gradient.')
+ page.get_by_role('button',name='Test your understanding').click();page.locator('#numeric').fill('0.2');page.get_by_role('button',name='Change answer sign').click();expect(page.locator('#numeric')).to_have_value('-0.2')
+ page.get_by_role('button',name='Check answer').click();expect(page.get_by_text('That’s the idea.')).to_be_visible()
+ page.get_by_role('button',name='Unsave lesson',exact=True).click();expect(page.get_by_text('That’s the idea.')).to_be_visible()
+ page.get_by_role('button',name='Continue',exact=True).click();page.locator('[data-answer="1"]').click()
+ page.get_by_role('navigation',name='Lesson navigation').get_by_role('link',name='Home',exact=True).click()
+ expect(page.locator('.current-copy h3')).to_have_text('From scores to probabilities');page.get_by_role('link',name='Continue',exact=True).click()
+ expect(page.locator('.challenge-tag')).to_contain_text('2 / 2');expect(page.locator('[data-answer="1"]')).to_have_attribute('aria-pressed','true')
+ page.reload();expect(page.locator('[data-answer="1"]')).to_have_attribute('aria-pressed','true')
+ page.get_by_role('navigation',name='Lesson navigation').get_by_role('link',name='Profile',exact=True).click();expect(page.get_by_role('heading',name='Your learning profile.')).to_be_visible()
+ page.get_by_label('Display name').fill('Ada');page.get_by_role('button',name='Save name').click();page.reload();expect(page.get_by_label('Display name')).to_have_value('Ada')
+ page.goto(base+'/#lesson/vectors');page.get_by_role('button',name='Explore the theory').click();expect(page).to_have_url(base+'/#lesson/vectors/understand')
+ page.go_back();expect(page.locator('#experiment')).to_be_visible();page.go_forward();expect(page.locator('.scientific-text')).to_be_visible()
+ page.get_by_label('Switch lesson').select_option('attention');expect(page.locator('#experiment')).to_be_visible()
+ # Unknown nested routes recover; completed collection does not pretend to be a new journey.
+ page.goto(base+'/#lesson/attention/nonsense');expect(page.get_by_text('A little off the path.')).to_be_visible()
+ ids=page.evaluate("async()=> (await import('./curriculum.js')).lessons.map(l=>l.id)")
+ page.evaluate('(ids)=>localStorage.setItem("port.learning.v1",JSON.stringify({completed:ids,days:[],notes:{},steps:{}}))',ids)
+ page.goto(base+'/#home');page.reload();expect(page.get_by_text('Collection complete',exact=True)).to_be_visible();expect(page.get_by_role('link',name='Review lesson',exact=True)).to_be_visible()
+ assert not errors,errors
+ b.close();print('Lesson switching, home/profile access, resume, bookmark stability, mobile sign entry, history and completion-state checks passed')
