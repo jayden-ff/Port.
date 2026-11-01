@@ -1,105 +1,77 @@
-# Port.
+# port.
 
-Ein Portfolio-Dashboard mit manuell erfassten Aktien, ETFs und Kryptowährungen, echten Kursen, relevanten RSS-Nachrichten und einem Risikoblick für isolierte, lineare Hebelpositionen. React/Vite, cremefarbene Oberfläche, grüne Akzente und Animationen mit Unterstützung für reduzierte Bewegung.
+A mobile-first learning platform for understanding AI, from intuition to scientific reasoning. This initial collection contains 12 original lessons, 3 classes, 6 interactive mathematical experiments and 24 assessments. Advanced material covers chain-rule computation with shared parameters, masked attention, statistical evaluation and neural tangent kernels. It is a starting curriculum, not a complete professional qualification.
 
-## Was funktioniert
+## Run locally
 
-- Leerer Start ohne Demo-Positionen oder erfundene Nachrichten. Alte Demo-Portfolios werden entfernt; tatsächlich importierte Altbestände werden übernommen.
-- Positionen hinzufügen, bearbeiten, löschen und per CSV importieren. Die Depotnamen Trade Republic, Robinhood, Revolut und Fomo kennzeichnen die Herkunft; sie sind keine automatischen Brokerverbindungen.
-- Aktien/ETFs über Yahoo Finance, Krypto über CoinGecko; Coinbase ist für unterstützte Coins ein Ersatzanbieter. Kurswährung und tatsächliche Kurszeit bleiben sichtbar. Frankfurter/EZB liefert tägliche Referenzkurse zur EUR-Umrechnung.
-- Ein gemeinsames Backend für alle Besucher. Keine persönlichen Markt-API-Schlüssel und keine Zugangsdaten im Frontend.
-- Passende Originalmeldungen aus Google News RSS mit Quelle, Veröffentlichungszeit, Filtern, Suche und lokaler Merkliste. Zuordnung nach Unternehmen, Coin-Namen, Kürzeln oder Makrothemen; Relevanz nach Brutto-Exposure.
-- Spot sowie isolierte lineare Long-/Short-Positionen: Einstieg, Währung, Margin, Hebel und optional ein eingetragener Liquidationspreis. Stattdessen ist eine ausdrücklich gekennzeichnete Schätzung möglich.
-- Positionen, Merkliste und Kurscache bleiben im Browser. Nur Asset-Kürzel, Coin-IDs und Namen werden an das Backend bzw. Anbieter gesendet; Stückzahlen, Margin und Einstieg werden lokal verarbeitet.
-
-Es gibt keinen kostenlosen Dienst mit garantierten Echtzeitkursen für sämtliche Aktien, Börsen und Kryptowährungen. Die öffentliche Yahoo-Schnittstelle ist inoffiziell und kann sich ändern oder Abfragen ablehnen. CoinGecko und Coinbase können Limits setzen. RSS-Indexierung kann verzögert sein. Die Seite fragt Kurse und Nachrichten jede Minute ab; das ist keine garantierte Echtzeit. Fehlende Kurse werden nicht durch Einstiegspreise ersetzt, Teilbewertungen werden gekennzeichnet und alte Abrufe bleiben erkennbar. Marktquoten sind keine ausführbaren Brokerkurse oder Liquidations-Markpreise.
-
-## Entwicklung
-
-Node.js >=22.12, npm:
+Serve this directory over HTTP (ES modules do not work via file://):
 
 ```sh
-npm ci
-npm test
-npm run dev
+npm start
+# http://localhost:4173
 ```
 
-Vite auf Port 5173 liefert das Frontend und die gemeinsame API unter `/api`. `npm run build` und `npm start` starten den Produktionsserver auf Port 3000 (`PORT` optional). Serverabrufe nutzen `undici` mit `EnvHttpProxyAgent`, also auch eine konfigurierte HTTPS-Proxy-Umgebung mit bestehender CA-Verifikation.
-
-```sh
-curl -fsS http://127.0.0.1:5173/api/health
-curl -fsS 'http://127.0.0.1:5173/api/quotes?assets=stock:AAPL,stock:SAP.DE,crypto:bitcoin'
-curl -fsS 'http://127.0.0.1:5173/api/news?symbols=AAPL,BTC'
-```
-
-`npm test` führt deterministische Tests der Berechnungen, CSV-Verarbeitung, RSS-Normalisierung, Cache-Verwendung und API-Grenzen aus. Mit Python Playwright und Chromium sind zusätzlich verfügbar:
-
-```sh
-python tests/browser_smoke.py
-python tests/live_backend.py
-```
-
-Der erste Browsercheck nutzt kontrollierte API-Antworten und prüft Bedienung, Long/Short, Fehlerfälle, lokale Speicherung, mobile Navigation und Layouts. Der zweite prüft echte Anbieterabrufe und die Darstellung ohne Browser-Fixtures. Die externen Quellen müssen erreichbar sein. `PORT_BASE_URL` und `CHROMIUM_PATH` können überschrieben werden. Zertifikatsprüfung wird nicht deaktiviert.
-
-## Gemeinsames Backend auf Cloudflare Workers
-
-GitHub Pages kann nur statische Dateien ausliefern. `worker/index.js` enthält deshalb einen separaten, kostenlosen Worker für die Datenabrufe. Er speichert keine Nutzerportfolios und benötigt für die verwendeten Marktquellen keinen Markt-API-Schlüssel.
-
-Für das Deployment werden ein Cloudflare-Konto, dessen Account-ID und ein API-Token benötigt. Der Token sollte auf dieses Konto begrenzt sein und **Account / Workers Scripts / Edit** sowie **Account / Account Settings / Read** erlauben. Zugangsdaten sicher in den Umgebungseinstellungen oder einem Secret Store setzen; niemals in Chat, Git, `.env.example`, `public/backend.json` oder `VITE_*` eintragen.
-
-```sh
-npm run build:api
-npm run deploy:api
-```
-
-Das Deployment liest `CLOUDFLARE_API_TOKEN` und `CLOUDFLARE_ACCOUNT_ID`. `build:api` erstellt nur das Worker-Bundle, ohne etwas zu veröffentlichen. Die CLI verwendet einen lokalen, ignorierten Konfigurationsordner `.wrangler/`, damit sie in eingeschränkten Cloud-Umgebungen funktioniert. Cloudflare nennt beim Deployment die tatsächliche `https://port-market-api.<subdomain>.workers.dev`-Adresse. Prüfe dort `/health`, `/quotes` und `/news`, bevor die Seite diese Adresse verwendet. Ein lokaler Test beweist nicht, dass die Anbieter aus Cloudflares Netzwerk erreichbar sind.
-
-`wrangler.jsonc` erlaubt CORS für `https://jayden-ff.github.io`. Bei einem anderen Frontend-Host `ALLOWED_ORIGINS` anpassen. CORS ist kein Zugangsschutz; die Read-only-API ist öffentlich. Cache und Abfragegrößen begrenzen Anbieterlast. Ein zusätzliches Limit von 120 Abrufen/IP/Minute gilt je laufender Worker-Isolate; es ist kein globaler Quotaschutz. Cloudflare-Free-Kontingente und Anbieterlimits gelten weiterhin. Keine automatischen Wechsel auf kostenpflichtige Tarife.
-
-API-Endpunkte:
-
-| Endpunkt | Zweck |
-| --- | --- |
-| `/health` | Dienstkennung und Konfiguration |
-| `/quotes?assets=stock:AAPL,crypto:bitcoin` | maximal 30 eindeutige Assets, Kurse und Fehler je Asset |
-| `/search?type=stock&q=Apple` | Aktie/ETF oder `type=crypto` suchen |
-| `/news?symbols=AAPL,BTC&names={...}` | maximal 15 Kürzel mit optionalen Namen; echte RSS-Meldungen |
-| `/fx` | EZB-Referenzkurse mit Referenzdatum |
-
-Große Portfolios werden im Client in begrenzten Gruppen abgefragt. Erfolgreiche Ergebnisse bleiben bei Teilfehlern erhalten. Der Server akzeptiert nur feste Anbieterziele und validierte Suchparameter; er ist kein beliebiger URL-Proxy.
+Python 3 is required for this convenience command. Alternatively use any static HTTP server. Node 22+ runs checks/builds. There are no npm packages to install.
 
 ## GitHub Pages
 
-Öffentliche Seite: <https://jayden-ff.github.io/Port./>
+Production address: **https://jayden-ff.github.io/Port./**
 
-Die gemeinsame Backend-Adresse kann vor dem Build als öffentliche `VITE_API_BASE_URL` gesetzt werden. Alternativ in `public/backend.json` `apiBaseUrl` auf die echte HTTPS-Adresse setzen. Diese Adresse ist öffentlich und enthält keine Secrets. Besucher verwenden automatisch den gemeinsamen Dienst. Ein eigener kompatibler Dienst lässt sich optional unter Einstellungen verbinden.
+This learning platform replaces the former portfolio application in `jayden-ff/Port.`. The source lives on `main`; the static output lives on `gh-pages`. GitHub Pages is configured to deploy `gh-pages / (root)`. There is no market-data backend, portfolio dashboard, finance API or account setup in this site.
 
 ```sh
+npm test
+npm run build
 npm run deploy:pages
 ```
 
-Das Skript erstellt den Build mit Basis `/Port./` und aktualisiert `gh-pages`. Es erhält CNAME, verwendet keinen Force-Push und überschreibt nur einen Branch, der durch `.port-pages` als eigener Build erkennbar ist. In GitHub Settings → Pages muss `gh-pages / (root)` als Quelle gewählt sein. `main` enthält den Quellcode; `gh-pages` enthält die statischen Dateien.
+The deployment script runs tests/build, checks out the existing `gh-pages` branch in a temporary worktree, replaces its published files, preserves a custom CNAME if one exists, and makes a normal commit/push. It never force-pushes or rewrites history. Git and GitHub authentication must already be configured; the script stores no credentials. Your source changes should also be committed and pushed to `main`.
 
-**Aktueller Zustand:** Das Backend ist vorbereitet und lokal mit echten Daten geprüft, aber ohne Cloudflare-Zugangsdaten noch nicht öffentlich deployt. `public/backend.json` enthält deshalb `null`. Auf Pages funktionieren manuelle Positionen und Schlüssel-freie Kryptokurse bereits; Aktienkurse und News benötigen die einmalige Backend-Veröffentlichung. Dieser Zustand wird im Produkt sichtbar dargestellt.
+For a different static host, upload the contents of `dist/`. All asset references are relative and navigation uses hashes, so repository subpaths work without a base-URL change. A fresh GitHub repository needs a `gh-pages` branch and Pages configured to publish it before using this script.
 
-## Positionen und CSV
+## Visual identity
 
-`public/portfolio-beispiel.csv` ist ausschließlich eine herunterladbare Formatvorlage und wird niemals automatisch als Portfolio geladen. Ersetze die Beispielzeilen durch deine eigenen Trades.
+The final direction follows the user's museum-dashboard sketch: charcoal surfaces, lavender accents, a sculptural layered marble head, prominent current lesson, exhibit spotlight and numbered classes. Syne provides distinctive display typography, Hanken Grotesk handles body text, and IBM Plex Mono labels the exhibits. Fonts are locally hosted, subset WOFF2 files with accompanying SIL Open Font License texts. The original generated sculpture is a conceptual illustration, not a historical museum artifact. Its optimized transparent WebP is local to the site.
 
-Pflichtfelder für Spot: `symbol,quantity,entry_price` (`price` wird ebenfalls als Einstieg akzeptiert). Optional: `currency` (Standard EUR), `asset_type` (`stock` oder `crypto`), `coin_id`. Für Margin: `kind=margin,direction=long|short,margin,leverage`, optional `liquidation_price` oder `liquidation_mode=estimate,maintenance_margin` (Prozent). Margin und Einstieg stehen in der ausgewählten Positionswährung. Stückzahl wird bei linearen Margin-Positionen aus `margin × leverage / entry_price` abgeleitet.
+Mobile navigation and a compact current-lesson card prioritize one-handed access. Decorative movement is subtle and stops for system reduced-motion preferences. The desktop sidebar also includes a saved motion setting.
 
-Mehrere Spot-Zeilen desselben Assets in gleicher Währung werden mit gewichtetem Einstieg zusammengefasst. Margin-Trades bleiben getrennt. Ein CSV-Import ersetzt alle lokal erfassten Positionen der ausgewählten Depotquelle. Ungültige Dateien ändern nichts.
+## Included
 
-## Berechnung und Liquidation
+- Dashboard, searchable/filterable class catalog, class syllabi, lesson player, notebook and progress view.
+- Foundations: prediction, vectors, Bayesian inference and gradients.
+- Machine learning: least squares, classification, regularization and evaluation.
+- Deep learning: neural layers, backpropagation, attention and research reasoning.
+- Each lesson has intuition/experiment, technical reading with original references, and two graded questions. Numerical questions include worked explanations. The final research audit is self-assessed, explicitly not automatically graded.
+- All lessons are accessible; beginners can follow the sequence and experienced learners can jump ahead.
+- Actual calculations for line fitting, ridge shrinkage, gradient descent, sigmoid neurons, Bayes’ rule and softmax attention. Dataset and simplification boundaries are visible in the experiments.
+- Local progress and notes, one-time XP, day streak, bookmarking, JSON export/import, and reduced-motion support. System reduced-motion preferences always take precedence. Import merges completions and preserves existing notes.
+- Local fonts with their SIL Open Font License files. No external runtime requests, analytics, accounts or API keys. Only reference links leave the site.
 
-Für Stückzahl `q`, Einstieg `E`, Referenzkurs `P`, isolierte Margin `M` und Richtung `d` (+1 Long, −1 Short):
+## Extend the curriculum
 
-- Unrealisierter Gewinn: `d × q × (P − E)`.
-- Spot-Wert: `q × P`; Margin-Eigenkapital: `M + unrealisierter Gewinn`.
-- Exposure: `q × P`. Es wird separat vom Eigenkapital angezeigt.
-- Modellschwelle mit konstantem Maintenance-Satz `m`: Long `E × (1 − 1/L) / (1 − m)`; Short `E × (1 + 1/L) / (1 + m)`.
-- Abstand: Long `(P − Schwelle) / P`; Short `(Schwelle − P) / P`.
+Edit `curriculum.js`:
 
-Ein eingetragener Anbieterpreis hat Vorrang. Ohne Kurs oder manuelle Schwelle wird kein Abstand erfunden. Unter 5% Abstand erscheint ein Hinweis; bei berührter Schwelle muss der Anbieterstatus überprüft werden. Bereits liquidierte Positionen müssen manuell angepasst werden.
+1. Add a topic to `topics`: unique `id`, `title`, `description`.
+2. Add a class to `classes` with its `topicId`, unique `id`, title/short title, number, level, time, description, prerequisite text, color (`mint`, `peach`, `lavender`) and art (`orbit`, `curve`, `network`).
+3. Add lessons with the class's `classId` and permanent unique lesson IDs. IDs are storage and route keys; keep them stable after release.
+4. A lesson defines its title, subtitle, minutes, intro, task, formula, reading, experiment, two questions and sources. `||` separates reading paragraphs: use Unicode norm bars `‖` for mathematics. Use `choice()` and `number()` for assessments. Numerical tolerances are absolute.
+5. Choose an existing experiment or implement an additional case in `mountExperiment()` in `experiments.js`. Numerical helpers live in `core.js`. The generic player is in `app.js`.
 
-Das Modell umfasst keine Cross-Margin, inversen Kontrakte, Optionen, Knock-outs, Finanzierung, Funding, Zinsen, Gebühren oder gestaffelte Maintenance-Sätze. Anbieter nutzen eigene Markpreise und Regeln. Hinweise in der geöffneten Seite sind keine Push-Benachrichtigungen oder Brokerüberwachung. Für den Gewinn werden keine Gebühren oder Finanzierungskosten behauptet; EUR-Werte verwenden die tägliche FX-Referenz, keine historischen Einstieg-Wechselkurse.
+Class counts, lesson counts, progress denominators, catalog filtering and topic labels are derived from data. Optional topic promotion copy can be customized on the home page. Levels may be expanded in the filter options when introducing a new level taxonomy.
+
+## Sources and editorial scope
+
+The original instructional text draws on Stanford CS229 notes, *Mathematics for Machine Learning*, *Deep Learning*, and the original attention, calibration and neural tangent kernel papers. Each lesson links to its relevant sources. All six distinct reference URLs returned HTTP 200 during verification. The website is not affiliated with these institutions or authors. This curriculum is not an independently peer-reviewed university course.
+
+## Verification
+
+```sh
+npm test
+python tests/browser.py
+python tests/routes.py
+python tests/edge_cases.py
+```
+
+Browser checks require Python Playwright and Chromium at `/usr/bin/chromium`, with `npm start` running. `PORT_BASE_URL` selects another served path for the main browser suite. Checks cover four viewport widths, all lessons, answer retries, experiments, notes, bookmarks, persistence, route failures and reduced motion. See `docs/QA.md` for results and limits. Device emulation is not a substitute for a physical iPhone/Android and Safari check.
+
+Progress is browser-local, not authenticated, so XP is motivational and not a credential. Clear browser data and the local record is lost unless exported. There is no cloud sync or service-worker offline installation.

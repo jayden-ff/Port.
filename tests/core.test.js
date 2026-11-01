@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {sigmoid,softmax,gradientStep,posterior,complete,readState} from '../core.js';
+import {classes,lessons} from '../curriculum.js';
+test('stable probabilities for extreme logits',()=>{assert.equal(sigmoid(0),.5); assert.deepEqual(softmax([1000,1000]),[.5,.5]); assert.ok(Math.abs(softmax([1,2,3]).reduce((a,b)=>a+b)-1)<1e-12)});
+test('gradient descent converges or diverges according to step size',()=>{assert.equal(gradientStep(4,.25),2);assert.equal(gradientStep(4,1.2),-5.6)});
+test('Bayesian update includes base rates',()=>assert.ok(Math.abs(posterior(.01,.9,.05)-.1538461538)<1e-8));
+test('completion cannot award duplicate XP',()=>{let s=complete(readState(null),'prediction','2026-11-01');s=complete(s,'prediction','2026-11-01');assert.equal(s.completed.length,1);assert.equal(s.xp,100);assert.deepEqual(s.days,['2026-11-01'])});
+test('malformed storage is safely recovered',()=>{for(const value of ['{', 'null','{"completed":"oops"}','{"completed":[1],"xp":999}'])assert.deepEqual(readState(value).completed,[])});
+test('curriculum has unique routes, sources and valid assessments',()=>{assert.equal(classes.length,3);assert.equal(lessons.length,12);assert.equal(new Set(lessons.map(l=>l.id)).size,12);for(const l of lessons){assert.ok(classes.some(c=>c.id===l.classId));assert.ok(l.sources.length);assert.equal(l.questions.length,2);assert.ok(l.reading.length>600);for(const q of l.questions){assert.ok(q.explanation.length>30);if(q.options)assert.ok(q.correct>=0&&q.correct<q.options.length)}}});
+test('imported lesson steps are whole valid stages only',()=>{const s=readState(JSON.stringify({completed:[],steps:{prediction:1.5,vectors:2,neuron:-1,backprop:99,attention:'2'}}));assert.deepEqual(s.steps,{vectors:2})});
