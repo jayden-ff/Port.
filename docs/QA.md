@@ -28,10 +28,16 @@ An independent code review identified and prompted repairs for empty-hash naviga
 
 ## Delivery boundary
 
-The user subsequently authorized replacing the former portfolio at jayden-ff/Port. with this learning platform. The source and gh-pages output are being replaced through normal commits, preserving Git history. See README.md for the production address and deployment procedure.
+The user subsequently authorized replacing the former portfolio at jayden-ff/Port. with this learning platform. The source and gh-pages output were replaced through normal commits, preserving Git history. See README.md for the production address and deployment procedure.
 
 ## Museum redesign checks
 
 The final dark/lavender design follows the user-supplied sketch. New local fonts, sculpture WebP and SVG artwork were visually checked on desktop and mobile. Full lesson flow, Node suite, route regressions, imports and keyboard checks passed after the redesign. Mobile hero text bounds were explicitly measured to prevent clipped titles; the current lesson CTA is above the bottom navigation at 390 × 844. New animations are tested against reduced-motion preferences.
 
 Responsive review repairs also passed: full title at 601 px, scrollable sidebar in 844 × 390 landscape, and an accessible mobile motion toggle.
+
+## Publication verified
+
+GitHub Pages successfully built gh-pages commit 4ac23e41b75cdfb696d48ab2e4dacc08c2888731 at https://jayden-ff.github.io/Port./. The endpoint returned HTTP 200. Eleven public HTML/code/font/image resources were SHA-256 matched to the tested build. The published tree contains only the learning app assets; the portfolio source and published assets have been removed.
+
+Public-resource rendering passed the mobile dashboard, font and sculpture loading, lesson experiment, and correct-answer feedback with no JavaScript errors. Chromium did not trust the managed proxy certificate directly, so this browser check used unchanged public responses fetched through Python urllib with normal system TLS verification. Physical-device and Safari limits remain as described above.

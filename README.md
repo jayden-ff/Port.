@@ -33,7 +33,7 @@ For a different static host, upload the contents of `dist/`. All asset reference
 
 The final direction follows the user's museum-dashboard sketch: charcoal surfaces, lavender accents, a sculptural layered marble head, prominent current lesson, exhibit spotlight and numbered classes. Syne provides distinctive display typography, Hanken Grotesk handles body text, and IBM Plex Mono labels the exhibits. Fonts are locally hosted, subset WOFF2 files with accompanying SIL Open Font License texts. The original generated sculpture is a conceptual illustration, not a historical museum artifact. Its optimized transparent WebP is local to the site.
 
-Mobile navigation and a compact current-lesson card prioritize one-handed access. Decorative movement is subtle and stops for system reduced-motion preferences. The desktop sidebar also includes a saved motion setting.
+Mobile navigation and a compact current-lesson card prioritize one-handed access. Decorative movement is subtle and stops for system reduced-motion preferences. Both the desktop sidebar and mobile header include a saved motion setting.
 
 ## Included
 
