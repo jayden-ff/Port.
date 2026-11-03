@@ -1,30 +1,506 @@
-const sources={
- math:['Mathematics for Machine Learning · Deisenroth, Faisal & Ong','https://mml-book.github.io/'],
- cs229:['Stanford CS229 · Machine Learning notes','https://cs229.stanford.edu/main_notes.pdf'],
- dl:['Deep Learning · Goodfellow, Bengio & Courville','https://www.deeplearningbook.org/'],
- attn:['Vaswani et al. (2017) · Attention Is All You Need','https://arxiv.org/abs/1706.03762'],
- cal:['Guo et al. (2017) · On Calibration of Modern Neural Networks','https://arxiv.org/abs/1706.04599'],
- ntk:['Jacot et al. (2018) · Neural Tangent Kernel','https://arxiv.org/abs/1806.07572']
+import { curriculumLocales } from './curriculum-locales.js';
+
+// Stable routes, experiments and answer keys are shared by every language.
+const base = {
+  "topics": [
+    {
+      "id": "ai",
+      "title": "Artificial intelligence",
+      "description": "The science of learning, reasoning and representation."
+    }
+  ],
+  "classes": [
+    {
+      "id": "foundations",
+      "topicId": "ai",
+      "number": "01",
+      "title": "The foundations of intelligence",
+      "short": "Mathematical foundations",
+      "level": "Foundational",
+      "time": "20 min",
+      "color": "mint",
+      "art": "orbit",
+      "description": "Build the intuition. Then give it a mathematical language.",
+      "prereq": "Curiosity and high-school algebra."
+    },
+    {
+      "id": "machine-learning",
+      "topicId": "ai",
+      "number": "02",
+      "title": "Machines that learn",
+      "short": "Machine learning",
+      "level": "Intermediate",
+      "time": "20 min",
+      "color": "peach",
+      "art": "curve",
+      "description": "From a first prediction to the mathematics of generalization.",
+      "prereq": "Vectors, derivatives and basic probability."
+    },
+    {
+      "id": "deep-learning",
+      "topicId": "ai",
+      "number": "03",
+      "title": "Inside the neural network",
+      "short": "Deep learning",
+      "level": "Advanced",
+      "time": "29 min",
+      "color": "lavender",
+      "art": "network",
+      "description": "Follow the gradient. Understand attention. Read the research.",
+      "prereq": "Linear algebra, the chain rule and statistical learning."
+    }
+  ],
+  "lessons": [
+    {
+      "id": "prediction",
+      "classId": "foundations",
+      "title": "What does it mean to learn?",
+      "subtitle": "From rules to representations",
+      "minutes": 5,
+      "experiment": "regression",
+      "formula": "ŷ = wx + b     L = (1/n) Σᵢ (ŷᵢ − yᵢ)²",
+      "questions": [
+        {
+          "prompt": "Which quantity does training change in a linear model?",
+          "options": [
+            "The observed targets",
+            "The slope and intercept",
+            "The definition of every future input"
+          ],
+          "correct": 1,
+          "explanation": "Training adjusts model parameters. Inputs and targets are observations, not trainable parameters."
+        },
+        {
+          "prompt": "For ŷ = 2x + 1 and x = 3, what is the prediction?",
+          "correct": 7,
+          "tolerance": 0,
+          "explanation": "Substitute x = 3: 2 × 3 + 1 = 7. Prediction is the forward computation, before a loss is measured."
+        }
+      ],
+      "sources": [
+        [
+          "Stanford CS229 · Machine Learning notes",
+          "https://cs229.stanford.edu/main_notes.pdf"
+        ]
+      ]
+    },
+    {
+      "id": "vectors",
+      "classId": "foundations",
+      "title": "Thinking in vectors",
+      "subtitle": "The language of representations",
+      "minutes": 5,
+      "experiment": "neuron",
+      "formula": "z = wᵀx + b     σ(z) = 1 / (1 + e⁻ᶻ)",
+      "questions": [
+        {
+          "prompt": "Compute wᵀx for w = (2, −1) and x = (3, 4).",
+          "correct": 2,
+          "tolerance": 0,
+          "explanation": "The dot product is 2 × 3 + (−1) × 4 = 2."
+        },
+        {
+          "prompt": "X has shape 100 × 5. What shape must w have to produce one prediction per row?",
+          "options": [
+            "100 coordinates",
+            "5 coordinates",
+            "500 coordinates"
+          ],
+          "correct": 1,
+          "explanation": "The inner dimensions must match: a 100 × 5 matrix times a 5-dimensional vector gives 100 outputs."
+        }
+      ],
+      "sources": [
+        [
+          "Mathematics for Machine Learning · Deisenroth, Faisal & Ong",
+          "https://mml-book.github.io/"
+        ]
+      ]
+    },
+    {
+      "id": "probability",
+      "classId": "foundations",
+      "title": "Updating a belief",
+      "subtitle": "Why the base rate matters",
+      "minutes": 5,
+      "experiment": "bayes",
+      "formula": "P(H | E) = P(E | H) P(H) / P(E)",
+      "questions": [
+        {
+          "prompt": "Among 90 true positives and 495 false positives, what percentage of positive results are true? Round to one decimal.",
+          "correct": 15.4,
+          "tolerance": 0.1,
+          "explanation": "There are 585 positives in total. 100 × 90 / 585 ≈ 15.4%; sensitivity alone is not the answer."
+        },
+        {
+          "prompt": "Which change increases the posterior for a fixed positive detector result?",
+          "options": [
+            "Lowering the prior prevalence",
+            "Increasing the false-positive rate",
+            "Increasing the prior prevalence"
+          ],
+          "correct": 2,
+          "explanation": "With fixed sensitivity and false-positive rate, a higher prior raises the posterior odds."
+        }
+      ],
+      "sources": [
+        [
+          "Mathematics for Machine Learning · Deisenroth, Faisal & Ong",
+          "https://mml-book.github.io/"
+        ],
+        [
+          "Stanford CS229 · Machine Learning notes",
+          "https://cs229.stanford.edu/main_notes.pdf"
+        ]
+      ]
+    },
+    {
+      "id": "derivatives",
+      "classId": "foundations",
+      "title": "The direction of improvement",
+      "subtitle": "A derivative becomes a learning rule",
+      "minutes": 5,
+      "experiment": "gradient",
+      "formula": "θₜ₊₁ = θₜ − η ∇L(θₜ)     L(θ) = θ²",
+      "questions": [
+        {
+          "prompt": "Starting at θ = 4 with η = 0.25 and L = θ², what is θ after one step?",
+          "correct": 2,
+          "tolerance": 0,
+          "explanation": "The gradient is 8. The update is 4 − 0.25 × 8 = 2."
+        },
+        {
+          "prompt": "For L = θ² and nonzero θ, which fixed rate converges?",
+          "options": [
+            "η = 1.2",
+            "η = 1",
+            "η = 0.75"
+          ],
+          "correct": 2,
+          "explanation": "Convergence requires |1 − 2η| < 1. At 0.75 the magnitude is halved on every update, with alternating sign."
+        }
+      ],
+      "sources": [
+        [
+          "Mathematics for Machine Learning · Deisenroth, Faisal & Ong",
+          "https://mml-book.github.io/"
+        ],
+        [
+          "Deep Learning · Goodfellow, Bengio & Courville",
+          "https://www.deeplearningbook.org/"
+        ]
+      ]
+    },
+    {
+      "id": "regression",
+      "classId": "machine-learning",
+      "title": "Fitting is an optimization problem",
+      "subtitle": "From residuals to normal equations",
+      "minutes": 5,
+      "experiment": "regression",
+      "formula": "∇w L = (2/n) Xᵀ(Xw − y)     XᵀXw = Xᵀy",
+      "questions": [
+        {
+          "prompt": "When is the unregularized least-squares coefficient vector unique?",
+          "options": [
+            "Whenever n is positive",
+            "When X has full column rank",
+            "When all target values differ"
+          ],
+          "correct": 1,
+          "explanation": "Full column rank makes XᵀX positive definite, so the quadratic has a unique minimizer."
+        },
+        {
+          "prompt": "For X = [1, 2]ᵀ and y = [2, 4]ᵀ with no intercept, solve the normal equation for w.",
+          "correct": 2,
+          "tolerance": 0,
+          "explanation": "XᵀX = 5 and Xᵀy = 10. Hence 5w = 10 and w = 2."
+        }
+      ],
+      "sources": [
+        [
+          "Stanford CS229 · Machine Learning notes",
+          "https://cs229.stanford.edu/main_notes.pdf"
+        ],
+        [
+          "Mathematics for Machine Learning · Deisenroth, Faisal & Ong",
+          "https://mml-book.github.io/"
+        ]
+      ]
+    },
+    {
+      "id": "classification",
+      "classId": "machine-learning",
+      "title": "From scores to probabilities",
+      "subtitle": "Logistic regression and cross-entropy",
+      "minutes": 5,
+      "experiment": "neuron",
+      "formula": "p = σ(wᵀx + b)     ℓ = −y log p − (1−y) log(1−p)",
+      "questions": [
+        {
+          "prompt": "If p = 0.8 and y = 1, what is ∂ℓ/∂z for binary cross-entropy?",
+          "correct": -0.2,
+          "tolerance": 0.001,
+          "explanation": "For the logistic model with cross-entropy, the logit gradient is p − y = −0.2."
+        },
+        {
+          "prompt": "What does a well-calibrated probability of 0.8 mean?",
+          "options": [
+            "Every such prediction is correct",
+            "About 80% of comparable predictions are positive",
+            "The decision threshold must be 0.8"
+          ],
+          "correct": 1,
+          "explanation": "Calibration concerns observed frequencies among comparable predicted probabilities, not certainty about any one event."
+        }
+      ],
+      "sources": [
+        [
+          "Stanford CS229 · Machine Learning notes",
+          "https://cs229.stanford.edu/main_notes.pdf"
+        ],
+        [
+          "Guo et al. (2017) · On Calibration of Modern Neural Networks",
+          "https://arxiv.org/abs/1706.04599"
+        ]
+      ]
+    },
+    {
+      "id": "generalization",
+      "classId": "machine-learning",
+      "title": "The unseen-data problem",
+      "subtitle": "Bias, variance and regularization",
+      "minutes": 5,
+      "experiment": "regularization",
+      "formula": "Lλ(w) = ‖Xw − y‖²/n + λ‖w‖²",
+      "questions": [
+        {
+          "prompt": "Where should λ be selected?",
+          "options": [
+            "On the final test set",
+            "By minimizing training error alone",
+            "Using training/validation splits or cross-validation"
+          ],
+          "correct": 2,
+          "explanation": "Hyperparameters are part of model selection. The final test set must remain independent of that selection."
+        },
+        {
+          "prompt": "For one feature with XᵀX/n = 2, Xᵀy/n = 6 and λ = 1, what is the ridge coefficient?",
+          "correct": 2,
+          "tolerance": 0,
+          "explanation": "The ridge normal equation is (2 + 1)w = 6, so w = 2. Without the penalty the coefficient would be 3."
+        }
+      ],
+      "sources": [
+        [
+          "Stanford CS229 · Machine Learning notes",
+          "https://cs229.stanford.edu/main_notes.pdf"
+        ],
+        [
+          "Deep Learning · Goodfellow, Bengio & Courville",
+          "https://www.deeplearningbook.org/"
+        ]
+      ]
+    },
+    {
+      "id": "evaluation",
+      "classId": "machine-learning",
+      "title": "Evidence, not just accuracy",
+      "subtitle": "Designing a defensible evaluation",
+      "minutes": 5,
+      "experiment": "bayes",
+      "formula": "precision = TP/(TP+FP)     recall = TP/(TP+FN)",
+      "questions": [
+        {
+          "prompt": "A model produces TP = 40, FP = 10 and FN = 60. What is its recall as a percentage?",
+          "correct": 40,
+          "tolerance": 0,
+          "explanation": "Recall is TP/(TP+FN) = 40/100 = 40%. Precision would be 40/50 = 80%."
+        },
+        {
+          "prompt": "Two hundred records come from ten patients. Which bootstrap is generally better for patient-level generalization?",
+          "options": [
+            "Resample patients with their records",
+            "Independently resample all records",
+            "Reuse the training accuracy"
+          ],
+          "correct": 0,
+          "explanation": "Resampling patients respects within-patient dependence. The appropriate unit follows the target population and sampling design."
+        }
+      ],
+      "sources": [
+        [
+          "Stanford CS229 · Machine Learning notes",
+          "https://cs229.stanford.edu/main_notes.pdf"
+        ],
+        [
+          "Guo et al. (2017) · On Calibration of Modern Neural Networks",
+          "https://arxiv.org/abs/1706.04599"
+        ]
+      ]
+    },
+    {
+      "id": "neuron",
+      "classId": "deep-learning",
+      "title": "A neuron is a starting point",
+      "subtitle": "Composition, features and expressivity",
+      "minutes": 5,
+      "experiment": "neuron",
+      "formula": "h = φ(W₁x + b₁)     f(x) = W₂h + b₂",
+      "questions": [
+        {
+          "prompt": "What does a stack of affine layers without nonlinearities represent?",
+          "options": [
+            "An arbitrary continuous function",
+            "A single affine transformation",
+            "A calibrated Bayesian posterior"
+          ],
+          "correct": 1,
+          "explanation": "Composing affine maps produces another affine map. Nonlinear activations are what prevent the stack from collapsing this way."
+        },
+        {
+          "prompt": "For ReLU(Wx+b), use W = 2, x = −3, b = 1. What is the output?",
+          "correct": 0,
+          "tolerance": 0,
+          "explanation": "The preactivation is 2 × (−3) + 1 = −5. ReLU returns max(0, −5) = 0."
+        }
+      ],
+      "sources": [
+        [
+          "Deep Learning · Goodfellow, Bengio & Courville",
+          "https://www.deeplearningbook.org/"
+        ]
+      ]
+    },
+    {
+      "id": "backprop",
+      "classId": "deep-learning",
+      "title": "Backpropagation, without the magic",
+      "subtitle": "Reverse-mode automatic differentiation",
+      "minutes": 5,
+      "experiment": "gradient",
+      "formula": "δₗ = (Wₗ₊₁ᵀδₗ₊₁) ⊙ φ′(zₗ)     ∂L/∂Wₗ = δₗhₗ₋₁ᵀ",
+      "questions": [
+        {
+          "prompt": "A shared weight w appears twice: h = ReLU(wx), ŷ = wh, L = ½(ŷ − y)². At w = 2, x = 3 and y = 1, compute the total derivative dL/dw.",
+          "correct": 132,
+          "tolerance": 0,
+          "explanation": "h = 6 and ŷ = 12. Both paths contribute: dŷ/dw = h + w × dh/dw = 6 + 2 × 3 = 12. Thus dL/dw = (12 − 1) × 12 = 132, not 66."
+        },
+        {
+          "prompt": "A parameter reaches the loss through two branches. How are its gradient contributions combined?",
+          "options": [
+            "Multiply the contributions",
+            "Use only the larger contribution",
+            "Add the contributions"
+          ],
+          "correct": 2,
+          "explanation": "The multivariable chain rule sums derivative contributions over all paths from the reused parameter to the loss."
+        }
+      ],
+      "sources": [
+        [
+          "Deep Learning · Goodfellow, Bengio & Courville",
+          "https://www.deeplearningbook.org/"
+        ]
+      ]
+    },
+    {
+      "id": "attention",
+      "classId": "deep-learning",
+      "title": "Attention is a weighted conversation",
+      "subtitle": "Queries, keys and values",
+      "minutes": 9,
+      "experiment": "attention",
+      "formula": "Attention(Q,K,V) = softmax(QKᵀ / √dₖ) V",
+      "questions": [
+        {
+          "prompt": "After dimension scaling, a query has logits [0, ln(3), ln(100)] and scalar values [2, 6, 100]. The third position is causally masked. Compute the attention output at temperature 1.",
+          "correct": 5,
+          "tolerance": 0.001,
+          "explanation": "Apply the mask before softmax. The unmasked exponentials are 1 and 3, giving weights ¼ and ¾. The output is ¼ × 2 + ¾ × 6 = 5; the masked value contributes nothing."
+        },
+        {
+          "prompt": "Why is the dot product divided by √dₖ?",
+          "options": [
+            "To keep logit scale roughly stable as key dimension grows",
+            "To make attention linear in sequence length",
+            "To guarantee causal explanations"
+          ],
+          "correct": 0,
+          "explanation": "Under independent unit-variance coordinates, the dot-product variance grows as dₖ. Scaling counteracts that growth; it does not change quadratic pairwise structure."
+        }
+      ],
+      "sources": [
+        [
+          "Vaswani et al. (2017) · Attention Is All You Need",
+          "https://arxiv.org/abs/1706.03762"
+        ],
+        [
+          "Deep Learning · Goodfellow, Bengio & Courville",
+          "https://www.deeplearningbook.org/"
+        ]
+      ]
+    },
+    {
+      "id": "research",
+      "classId": "deep-learning",
+      "title": "From learning a model to reading a paper",
+      "subtitle": "Assumptions, limiting regimes and reproducibility",
+      "minutes": 10,
+      "experiment": "regularization",
+      "formula": "Kθ(x,x′) = ∇θfθ(x)ᵀ ∇θfθ(x′)",
+      "questions": [
+        {
+          "prompt": "Let f(a,b)(x) = a(bx)², with both a and b trainable. At a = 1 and b = 2, compute the neural tangent kernel K(1, 3).",
+          "correct": 288,
+          "tolerance": 0,
+          "explanation": "The parameter gradient is (b²x², 2abx²) = (4x², 4x²). At x = 1 it is (4,4); at x = 3 it is (36,36). Their inner product is 4 × 36 + 4 × 36 = 288. Holding one parameter fixed would give a different kernel."
+        },
+        {
+          "prompt": "What follows directly from an infinite-width fixed-kernel theorem?",
+          "options": [
+            "Every finite Transformer has a fixed training kernel",
+            "The specified limit has the stated behavior under its assumptions",
+            "Feature learning never occurs"
+          ],
+          "correct": 1,
+          "explanation": "A theorem establishes its conclusion within its assumptions and limiting regime. Extending it to finite models requires additional evidence."
+        }
+      ],
+      "sources": [
+        [
+          "Jacot et al. (2018) · Neural Tangent Kernel",
+          "https://arxiv.org/abs/1806.07572"
+        ],
+        [
+          "Deep Learning · Goodfellow, Bengio & Courville",
+          "https://www.deeplearningbook.org/"
+        ]
+      ]
+    }
+  ]
 };
-export const topics=[{id:'ai',title:'Artificial intelligence',description:'The science of learning, reasoning and representation.'}];
-export const classes=[
-{id:'foundations',topicId:'ai',number:'01',title:'The foundations of intelligence',short:'Mathematical foundations',level:'Foundational',time:'55 min',color:'mint',art:'orbit',description:'Build the intuition. Then give it a mathematical language.',prereq:'Curiosity and high-school algebra.'},
-{id:'machine-learning',topicId:'ai',number:'02',title:'Machines that learn',short:'Machine learning',level:'Intermediate',time:'75 min',color:'peach',art:'curve',description:'From a first prediction to the mathematics of generalization.',prereq:'Vectors, derivatives and basic probability.'},
-{id:'deep-learning',topicId:'ai',number:'03',title:'Inside the neural network',short:'Deep learning',level:'Advanced',time:'95 min',color:'lavender',art:'network',description:'Follow the gradient. Understand attention. Read the research.',prereq:'Linear algebra, the chain rule and statistical learning.'}
-];
-const choice=(prompt,options,correct,explanation)=>({prompt,options,correct,explanation});
-const number=(prompt,correct,tolerance,explanation)=>({prompt,correct,tolerance,explanation});
-export const lessons=[
-{id:'prediction',classId:'foundations',title:'What does it mean to learn?',subtitle:'From rules to representations',minutes:10,experiment:'regression',intro:'A traditional program follows rules you write. A learning system fits a rule to examples. Move the line below: you are doing the first job of a learning algorithm.',task:'Change the slope until the line follows the observations. Watch the loss, not just the line.',formula:'ŷ = wx + b     L = (1/n) Σᵢ (ŷᵢ − yᵢ)²',reading:`Learning starts with a task, a family of possible functions, and evidence. In supervised learning, the evidence is a dataset of pairs (xᵢ, yᵢ). A model fθ maps inputs to predictions, while a loss function measures disagreement with the observed targets. Training chooses parameters θ to reduce average loss on the training set. The data do not literally tell the program how to think: the model family and training procedure already encode strong assumptions.||Consider predicting a numerical measurement with a straight line. The slope w and intercept b are parameters; the measured input x is not. Squared error penalizes large residuals more than small ones. An isolated outlier can therefore influence the fitted line substantially. A low training loss says the model explains the examples it saw; it does not establish that it will work on new examples.||We care about expected loss on the distribution encountered in use. The empirical average is only an estimate of that quantity. Keep some data outside training to test generalization. This distinction between fitting observed data and performing well on unseen data will remain central even when a straight line becomes a billion-parameter neural network.`,questions:[choice('Which quantity does training change in a linear model?',['The observed targets','The slope and intercept','The definition of every future input'],1,'Training adjusts model parameters. Inputs and targets are observations, not trainable parameters.'),number('For ŷ = 2x + 1 and x = 3, what is the prediction?',7,0,'Substitute x = 3: 2 × 3 + 1 = 7. Prediction is the forward computation, before a loss is measured.')],sources:[sources.cs229]},
-{id:'vectors',classId:'foundations',title:'Thinking in vectors',subtitle:'The language of representations',minutes:12,experiment:'neuron',intro:'A model sees a collection of numbers. A weighted sum turns that representation into a signal. Adjust one weight and see which input matters.',task:'Set the weight to zero, then make it negative. How does the predicted probability change?',formula:'z = wᵀx + b     σ(z) = 1 / (1 + e⁻ᶻ)',reading:`A vector is an ordered list of coordinates in a chosen basis. In a learning problem, these coordinates might encode measurements, categories, pixels or learned features. The dot product wᵀx = Σⱼ wⱼxⱼ combines input coordinates into a scalar. Each weight describes the effect of its associated input while the others stay fixed. A negative weight reverses the contribution; a zero weight removes it.||Vector operations allow us to write an entire dataset compactly. Put n observations with d features in a design matrix X of shape n × d. Multiplying X by a d-dimensional weight vector produces n predictions. The transpose is not decoration: it determines which dimensions align. A neural layer generalizes this to multiple outputs by using a matrix of weights.||Feature scale changes the practical meaning of a weight. A coordinate measured in thousands can dominate one measured in fractions, even with equally sized weights. Standardization often helps optimization, but its statistics must be fitted on training data only. Applying a transformation learned from the test set leaks information into the model-selection process. Representations are choices, not neutral descriptions of reality.`,questions:[number('Compute wᵀx for w = (2, −1) and x = (3, 4).',2,0,'The dot product is 2 × 3 + (−1) × 4 = 2.'),choice('X has shape 100 × 5. What shape must w have to produce one prediction per row?',['100 coordinates','5 coordinates','500 coordinates'],1,'The inner dimensions must match: a 100 × 5 matrix times a 5-dimensional vector gives 100 outputs.')],sources:[sources.math]},
-{id:'probability',classId:'foundations',title:'Updating a belief',subtitle:'Why the base rate matters',minutes:15,experiment:'bayes',intro:'A positive signal is not the same thing as certainty. Bayesian inference combines how reliable the evidence is with how common the event was to begin with.',task:'Keep the detector fixed and change the prior probability. Notice how much a positive result can mean different things.',formula:'P(H | E) = P(E | H) P(H) / P(E)',reading:`Conditional probability is the probability of an event after restricting attention to cases where another event occurs. P(E | H) and P(H | E) are usually different. A detector that identifies 90% of true cases does not imply that 90% of positive results are true cases. The prevalence of the condition and the false-positive rate also matter.||Bayes’ rule follows from writing the same joint probability in two ways: P(H, E) = P(E | H)P(H) = P(H | E)P(E). For mutually exclusive hypotheses H and not-H, the denominator expands to P(E | H)P(H) + P(E | not-H)P(not-H). This normalization ensures the posterior probabilities sum to one.||If prevalence is 1%, sensitivity is 90% and the false-positive rate is 5%, a population of 10,000 produces about 90 true positives and 495 false positives in expectation. A positive result then corresponds to a posterior probability of 90 / 585, about 15.4%. This is a probabilistic model, not a medical decision rule. In machine learning, the same logic underlies generative classification and parameter inference. Priors express assumptions; they should be examined through sensitivity analysis rather than hidden.`,questions:[number('Among 90 true positives and 495 false positives, what percentage of positive results are true? Round to one decimal.',15.4,.1,'There are 585 positives in total. 100 × 90 / 585 ≈ 15.4%; sensitivity alone is not the answer.'),choice('Which change increases the posterior for a fixed positive detector result?',['Lowering the prior prevalence','Increasing the false-positive rate','Increasing the prior prevalence'],2,'With fixed sensitivity and false-positive rate, a higher prior raises the posterior odds.')],sources:[sources.math,sources.cs229]},
-{id:'derivatives',classId:'foundations',title:'The direction of improvement',subtitle:'A derivative becomes a learning rule',minutes:18,experiment:'gradient',intro:'A derivative tells you how a function changes locally. To reduce a loss, move against its gradient. The size of that move determines whether learning converges.',task:'Compare learning rates 0.25 and 1.10. Run several steps and watch the difference between convergence and divergence.',formula:'θₜ₊₁ = θₜ − η ∇L(θₜ)     L(θ) = θ²',reading:`For a scalar function, the derivative is the limiting ratio of output change to input change. It gives the slope of a local linear approximation, not a promise about arbitrarily large moves. For a function of several parameters, the gradient collects partial derivatives. Under the Euclidean norm, the negative gradient points in the direction of steepest local decrease.||Gradient descent updates parameters by subtracting a learning rate η times the gradient. For L(θ) = θ², the derivative is 2θ and the iteration becomes θₜ₊₁ = (1 − 2η)θₜ. This recurrence converges to zero exactly when |1 − 2η| < 1, or 0 < η < 1, except for the trivial initial state θ = 0. A rate above one makes the magnitude grow; at one, the iterate oscillates without improving.||For a multivariate positive-definite quadratic, the largest Hessian eigenvalue controls the maximum stable fixed step size: 0 < η < 2/λmax. Small eigenvalues produce slow directions, so poor conditioning can make training painfully slow. Real neural objectives are generally nonconvex, and stochastic gradients add noise. Nevertheless, this small example explains why a useful direction and a useful step length are distinct requirements.`,questions:[number('Starting at θ = 4 with η = 0.25 and L = θ², what is θ after one step?',2,0,'The gradient is 8. The update is 4 − 0.25 × 8 = 2.'),choice('For L = θ² and nonzero θ, which fixed rate converges?',['η = 1.2','η = 1','η = 0.75'],2,'Convergence requires |1 − 2η| < 1. At 0.75 the magnitude is halved on every update, with alternating sign.')],sources:[sources.math,sources.dl]},
-{id:'regression',classId:'machine-learning',title:'Fitting is an optimization problem',subtitle:'From residuals to normal equations',minutes:16,experiment:'regression',intro:'Linear regression is simple enough to solve analytically, yet rich enough to introduce likelihood, optimization and identifiability.',task:'Find a small loss by changing slope and intercept. Then explain why a best fit need not pass through every observation.',formula:'∇w L = (2/n) Xᵀ(Xw − y)     XᵀXw = Xᵀy',reading:`Let X be an n × d design matrix and y an n-dimensional response. With the intercept included as a constant column, least squares minimizes L(w) = ‖Xw − y‖² / n. Expanding the quadratic and differentiating gives ∇L = 2Xᵀ(Xw − y)/n. Stationary points satisfy the normal equations XᵀXw = Xᵀy. The Hessian 2XᵀX/n is positive semidefinite, so every stationary point is a global minimizer.||If X has full column rank, the minimizer is unique. If columns are linearly dependent, multiple coefficient vectors may make identical predictions on the training data. The expression (XᵀX)⁻¹Xᵀy is a mathematical formula under the full-rank assumption, not an instruction to explicitly invert a matrix in numerical software. QR decomposition or singular-value decomposition is typically more stable; forming XᵀX squares the condition number.||Least squares also has a statistical interpretation. Suppose yᵢ = xᵢᵀw + εᵢ with independent Gaussian errors of equal variance. The negative log likelihood differs from squared error only by scale and constants, so maximum likelihood and least squares select the same coefficients. Heteroscedastic or correlated noise changes that likelihood and may call for weighted or generalized least squares.||The model can be linear in its parameters even when it uses nonlinear features such as x². The key question is whether the unknown coefficients enter linearly. Adding features can improve fit while increasing variance. Assess predictive performance on held-out data and inspect residual patterns; neither a high training score nor a closed-form solution validates the assumptions.`,questions:[choice('When is the unregularized least-squares coefficient vector unique?',['Whenever n is positive','When X has full column rank','When all target values differ'],1,'Full column rank makes XᵀX positive definite, so the quadratic has a unique minimizer.'),number('For X = [1, 2]ᵀ and y = [2, 4]ᵀ with no intercept, solve the normal equation for w.',2,0,'XᵀX = 5 and Xᵀy = 10. Hence 5w = 10 and w = 2.')],sources:[sources.cs229,sources.math]},
-{id:'classification',classId:'machine-learning',title:'From scores to probabilities',subtitle:'Logistic regression and cross-entropy',minutes:17,experiment:'neuron',intro:'Classification needs more than a score. A sigmoid maps a real-valued logit into a probability, while cross-entropy makes confidently wrong predictions expensive.',task:'Push the logit toward both extremes. Observe where probability is most sensitive to a small weight change.',formula:'p = σ(wᵀx + b)     ℓ = −y log p − (1−y) log(1−p)',reading:`Binary logistic regression models P(y = 1 | x) as the sigmoid of a linear score z = wᵀx + b. Equivalently, it models the log odds log(p/(1−p)) as a linear function. A coefficient therefore has an additive effect on log odds, not a constant additive effect on probability. The sigmoid derivative p(1−p) is largest at p = 1/2 and approaches zero near either extreme.||For a Bernoulli target, maximizing conditional likelihood yields the binary cross-entropy objective. Combining the loss derivative with the sigmoid derivative gives the elegant result ∂ℓ/∂z = p − y. The weight gradient for one observation is (p − y)x. Although the sigmoid saturates, this combined derivative avoids an additional sigmoid factor that would appear when using squared error on the probability.||Numerical implementations should compute the loss from logits using stable log-sum-exp or softplus expressions. Directly taking log(0) after rounding a saturated probability can produce infinities. A displayed probability is also not automatically calibrated: among predictions of 0.8, approximately 80% should be positive for calibration to hold. Calibration is an empirical property of predictions relative to outcomes.||A classification threshold is a decision rule layered on top of a probability model. A threshold of 0.5 is natural only under particular cost assumptions. If missing a positive case is more costly than a false alarm, a lower threshold may be appropriate. Evaluate ranking, calibration and decisions separately, and preserve a final test set from threshold tuning.`,questions:[number('If p = 0.8 and y = 1, what is ∂ℓ/∂z for binary cross-entropy?',-.2,.001,'For the logistic model with cross-entropy, the logit gradient is p − y = −0.2.'),choice('What does a well-calibrated probability of 0.8 mean?',['Every such prediction is correct','About 80% of comparable predictions are positive','The decision threshold must be 0.8'],1,'Calibration concerns observed frequencies among comparable predicted probabilities, not certainty about any one event.')],sources:[sources.cs229,sources.cal]},
-{id:'generalization',classId:'machine-learning',title:'The unseen-data problem',subtitle:'Bias, variance and regularization',minutes:20,experiment:'regularization',intro:'A model can memorize observations and still miss the underlying pattern. Regularization trades some training fit for a simpler, more stable solution.',task:'Increase the ridge penalty. Track what happens to the fitted slope, training error and validation error on this fixed toy dataset.',formula:'Lλ(w) = ‖Xw − y‖²/n + λ‖w‖²',reading:`The learning objective is usually evaluated on finite data, but deployment concerns unseen observations. With squared error, expected prediction error can be decomposed into irreducible noise, squared bias and variance under appropriate assumptions. A flexible estimator may reduce approximation bias while becoming more sensitive to the particular training sample. This decomposition describes an expectation over repeated training datasets; it cannot be read directly from one training-loss curve.||Ridge regression adds λ‖w‖² to the mean squared training error. For our normalization, its solution satisfies (XᵀX + nλI)w = Xᵀy, when all coefficients are penalized. A positive λ shrinks directions associated with small singular values especially strongly, reducing instability. Intercepts are commonly excluded from the penalty, and feature scaling matters because the penalty depends on the coordinate system.||Select λ using a validation procedure, not the final test set. Cross-validation repeats training on subsets and scores held-out folds. If observations are time ordered or clustered by person, random folds can leak information: use splits that reflect deployment. Fit preprocessing separately within each training fold. Otherwise even a properly separated regression estimator can inherit leaked information.||The experiment uses a deliberately small, fixed training set and separate validation observations. Its curves demonstrate a mechanism, not a universal claim that one nonzero penalty is always optimal. Regularization can worsen prediction when its assumptions are inappropriate. In overparameterized neural systems, test error may even exhibit double descent, so a simple U-shaped narrative is not a law. The practical discipline is to define the target population, separate model selection from evaluation, report uncertainty and check sensitivity to data splits.`,questions:[choice('Where should λ be selected?',['On the final test set','By minimizing training error alone','Using training/validation splits or cross-validation'],2,'Hyperparameters are part of model selection. The final test set must remain independent of that selection.'),number('For one feature with XᵀX/n = 2, Xᵀy/n = 6 and λ = 1, what is the ridge coefficient?',2,0,'The ridge normal equation is (2 + 1)w = 6, so w = 2. Without the penalty the coefficient would be 3.')],sources:[sources.cs229,sources.dl]},
-{id:'evaluation',classId:'machine-learning',title:'Evidence, not just accuracy',subtitle:'Designing a defensible evaluation',minutes:22,experiment:'bayes',intro:'The score is only meaningful if the evaluation asks the right question. Distribution shift, rare events and repeated test-set reuse can all undermine a strong-looking result.',task:'Lower prevalence while keeping the detector unchanged. Predict what happens to precision before checking the result.',formula:'precision = TP/(TP+FP)     recall = TP/(TP+FN)',reading:`Evaluation estimates performance for a particular target population and decision context. Accuracy aggregates correct predictions, but a classifier that always predicts the majority class can appear successful on a highly imbalanced dataset. Precision measures the fraction of predicted positives that are actually positive; recall measures the fraction of actual positives recovered. Both depend on the threshold, and precision also changes with prevalence even when class-conditional detection rates stay fixed.||A test set is not an infinite source of independent evidence. If researchers repeatedly choose architectures by looking at test results, the test set becomes part of model selection. A clean evaluation reserves a final holdout or uses nested cross-validation, with the inner loop selecting models and the outer loop estimating generalization. For time-dependent data, chronological separation often better approximates future deployment than a random shuffle.||Uncertainty matters. A reported difference of one percentage point may be small relative to sampling variation. Confidence intervals require assumptions about the sampling process; observations from the same patient, document or time series are not necessarily independent. A bootstrap should resample at the unit of independence, not blindly at the row level. A paired comparison is often appropriate when two models predict the same examples.||Distribution shift breaks the assumption that training and deployment examples come from the same distribution. Under covariate shift, P(x) changes while P(y|x) is assumed stable; under label shift, P(y) changes while P(x|y) is assumed stable. These are modeling assumptions to test, not labels that guarantee a correction will work.||A credible evaluation report identifies data provenance, split logic, selection procedure, uncertainty, subgroup results, calibration and limitations. For a high-stakes use, aggregate metrics cannot replace analysis of the actual costs of errors. A model can be well calibrated overall and poorly calibrated in a subgroup. The aim is to characterize where the system works and how strong the supporting evidence is, rather than to reduce a complex deployment decision to a single leaderboard number.`,questions:[number('A model produces TP = 40, FP = 10 and FN = 60. What is its recall as a percentage?',40,0,'Recall is TP/(TP+FN) = 40/100 = 40%. Precision would be 40/50 = 80%.'),choice('Two hundred records come from ten patients. Which bootstrap is generally better for patient-level generalization?',['Resample patients with their records','Independently resample all records','Reuse the training accuracy'],0,'Resampling patients respects within-patient dependence. The appropriate unit follows the target population and sampling design.')],sources:[sources.cs229,sources.cal]},
-{id:'neuron',classId:'deep-learning',title:'A neuron is a starting point',subtitle:'Composition, features and expressivity',minutes:19,experiment:'neuron',intro:'One neuron combines evidence. A network composes those transformations, creating representations in which a difficult task can become simpler.',task:'Change the weight and bias independently. The weight changes sensitivity; the bias shifts the decision boundary.',formula:'h = φ(W₁x + b₁)     f(x) = W₂h + b₂',reading:`A feed-forward network alternates affine maps and nonlinear activation functions. Without nonlinearities, any sequence of affine layers collapses to a single affine transformation, regardless of depth. The expressive gain comes from composition with nonlinear functions, not merely from adding matrices. A rectified linear unit, ReLU(z) = max(0,z), produces piecewise-linear mappings; a sigmoid produces smooth bounded activations.||The hidden representation h = φ(W₁x + b₁) can be interpreted as a learned feature map. A final linear layer then combines those features. This does not mean each hidden coordinate has a simple human concept attached to it. Representations can be distributed, and different parameter settings can implement the same function. Permuting hidden units with the corresponding output weights is one elementary symmetry.||Universal approximation results state that certain sufficiently wide networks can approximate continuous functions on compact sets to arbitrary accuracy. They do not say that a small network will suffice, that gradient descent will find the approximation, or that finite training data identify the correct behavior away from observations. Expressivity, optimization and statistical generalization are different questions.||Depth can represent some compositional functions more efficiently than shallow architectures, but introduces optimization challenges. Saturated sigmoid activations can attenuate gradients through long chains. ReLU avoids saturation on its positive side but has zero derivative on its negative side. Initialization, normalization and residual pathways all affect signal propagation. The experiment isolates a single sigmoid unit so the mapping remains inspectable; it should not be mistaken for a complete simulation of a trained deep network.`,questions:[choice('What does a stack of affine layers without nonlinearities represent?',['An arbitrary continuous function','A single affine transformation','A calibrated Bayesian posterior'],1,'Composing affine maps produces another affine map. Nonlinear activations are what prevent the stack from collapsing this way.'),number('For ReLU(Wx+b), use W = 2, x = −3, b = 1. What is the output?',0,0,'The preactivation is 2 × (−3) + 1 = −5. ReLU returns max(0, −5) = 0.')],sources:[sources.dl]},
-{id:'backprop',classId:'deep-learning',title:'Backpropagation, without the magic',subtitle:'Reverse-mode automatic differentiation',minutes:24,experiment:'gradient',intro:'Backpropagation is an efficient application of the chain rule to a computation graph. It tells each parameter how a local change would affect the final loss.',task:'Use a small learning rate and observe how updates shrink near the optimum. Connect this to the gradient magnitude.',formula:'δₗ = (Wₗ₊₁ᵀδₗ₊₁) ⊙ φ′(zₗ)     ∂L/∂Wₗ = δₗhₗ₋₁ᵀ',reading:`Represent a differentiable program as a directed acyclic graph of elementary operations. A forward pass evaluates each node and records quantities needed for differentiation. A reverse pass propagates derivatives of the final scalar loss with respect to intermediate values. When a value influences the loss through multiple paths, the contributions add. This accumulation is a frequent source of mistakes in hand-derived gradients.||For a layer zₗ = Wₗhₗ₋₁ + bₗ and hₗ = φ(zₗ), define δₗ = ∂L/∂zₗ. The chain rule gives δₗ = (Wₗ₊₁ᵀδₗ₊₁) ⊙ φ′(zₗ), where ⊙ denotes elementwise multiplication. The parameter derivative is an outer product δₗhₗ₋₁ᵀ, and the bias derivative is δₗ. These formulas describe one example; minibatch gradients aggregate contributions with the normalization specified by the loss.||Reverse-mode differentiation is efficient when there are many parameters but a scalar objective. A single backward sweep yields all parameter derivatives at a cost comparable to a small multiple of the forward computation, rather than perturbing each parameter separately. The tradeoff is memory: activations or other intermediate values often need to be retained. Activation checkpointing reduces memory use by recomputing parts of the graph during the reverse pass.||Products of Jacobians explain vanishing and exploding gradients. If their singular values systematically attenuate or amplify relevant directions, signals can shrink or grow exponentially with depth. Residual connections create shorter derivative paths, but do not guarantee stable training in every configuration. Gradient clipping bounds update-driving gradients; it does not repair an incorrectly differentiated computation.||Automatic differentiation is distinct from symbolic algebra and finite differences. It applies exact local derivative rules to floating-point operations, so results still inherit numerical error. A centered finite-difference check can catch implementation mistakes in small smooth examples, but step size must balance truncation against cancellation. Avoid testing exactly at nondifferentiable activation boundaries. For a research implementation, verify shape conventions, reduction factors, parameter sharing and gradients through every reused tensor.`,questions:[number('A shared weight w appears twice: h = ReLU(wx), ŷ = wh, L = ½(ŷ − y)². At w = 2, x = 3 and y = 1, compute the total derivative dL/dw.',132,0,'h = 6 and ŷ = 12. Both paths contribute: dŷ/dw = h + w × dh/dw = 6 + 2 × 3 = 12. Thus dL/dw = (12 − 1) × 12 = 132, not 66.'),choice('A parameter reaches the loss through two branches. How are its gradient contributions combined?',['Multiply the contributions','Use only the larger contribution','Add the contributions'],2,'The multivariable chain rule sums derivative contributions over all paths from the reused parameter to the loss.')],sources:[sources.dl]},
-{id:'attention',classId:'deep-learning',title:'Attention is a weighted conversation',subtitle:'Queries, keys and values',minutes:25,experiment:'attention',intro:'Attention lets a representation retrieve information from other representations. Compatibility scores become normalized weights, then mix the values.',task:'Change the temperature of the scores. See how a sharper distribution concentrates on one token, while a softer one blends context.',formula:'Attention(Q,K,V) = softmax(QKᵀ / √dₖ) V',reading:`Scaled dot-product attention compares queries with keys and uses the resulting weights to combine values. If there are n queries and m key/value positions, Q has shape n × dₖ, K has shape m × dₖ, and V has shape m × dᵥ. The score matrix QKᵀ therefore has shape n × m. Softmax is applied across keys for each query, making each output a weighted combination of value vectors.||The factor 1/√dₖ controls the scale of dot products. Under a heuristic model where query and key coordinates are independent, centered and have unit variance, their dot product has variance dₖ. Dividing by √dₖ keeps that variance near one. Without scaling, large logits can drive softmax toward saturation and make its gradients less useful. These assumptions motivate the scaling; trained representations need not satisfy them exactly. The experiment varies a separate temperature T in softmax(s/T), which illustrates concentration but is not the same as changing the head dimension.||Multi-head attention uses separate learned projections to create several attention operations in parallel, concatenates their outputs, and applies an output projection. Different heads can represent different compatibility relations, though specialization is not guaranteed. An attention weight alone is not a reliable causal explanation of a model’s decision: the value vectors, other heads, residual stream and downstream computation also contribute.||Self-attention without position information is permutation equivariant: permuting input positions permutes outputs correspondingly. Sequence models therefore incorporate position information, for example via positional embeddings or rotations of query and key vectors. In autoregressive decoding, a causal mask prevents a position from attending to future tokens. Masked logits are excluded before normalization, conceptually by setting them to negative infinity.||Dense self-attention forms n × n pairwise interactions, giving quadratic sequence-length cost for its attention matrix. Memory-efficient implementations can avoid materializing the whole matrix while preserving the same mathematical operation; sparse and approximate approaches instead change which interactions are represented or how they are computed.||To audit an implementation, track tensor shapes, the axis of softmax, mask broadcasting and training-versus-inference dropout. Compare a tiny hand-computed example before scaling up. A visually plausible heatmap does not establish correctness. The original Transformer paper combines attention with feed-forward sublayers, residual connections and normalization; attention by itself is only one component of the architecture.`,questions:[number('After dimension scaling, a query has logits [0, ln(3), ln(100)] and scalar values [2, 6, 100]. The third position is causally masked. Compute the attention output at temperature 1.',5,.001,'Apply the mask before softmax. The unmasked exponentials are 1 and 3, giving weights ¼ and ¾. The output is ¼ × 2 + ¾ × 6 = 5; the masked value contributes nothing.'),choice('Why is the dot product divided by √dₖ?',['To keep logit scale roughly stable as key dimension grows','To make attention linear in sequence length','To guarantee causal explanations'],0,'Under independent unit-variance coordinates, the dot-product variance grows as dₖ. Scaling counteracts that growth; it does not change quadratic pairwise structure.')],sources:[sources.attn,sources.dl]},
-{id:'research',classId:'deep-learning',title:'From learning a model to reading a paper',subtitle:'Assumptions, limiting regimes and reproducibility',minutes:27,experiment:'regularization',intro:'Professional understanding means knowing the boundary of a claim. A theorem, an empirical observation and a useful engineering heuristic require different kinds of evidence.',task:'Use the fixed ridge experiment as a miniature study. State what you observed, and identify what this one dataset cannot establish.',formula:'Kθ(x,x′) = ∇θfθ(x)ᵀ ∇θfθ(x′)',reading:`A scientific claim must specify its object, assumptions and scope. A theorem can be exact under assumptions that a deployed model violates. An empirical result can be reproducible for one benchmark without generalizing to a different population. An engineering heuristic may be useful without providing either a guarantee or a complete explanation. Reading a machine-learning paper well means keeping these categories separate while tracing how they support the central argument.||The neural tangent kernel provides an instructive example. For a scalar-output network fθ, define Kθ(x,x′) as the inner product of its parameter gradients at two inputs. Along gradient flow for a squared-error objective, this kernel governs how predictions change in response to residuals. The kernel can evolve during finite-width training. Under particular infinite-width limits, parameterizations and initialization assumptions, it converges to a deterministic kernel and can remain effectively constant during training.||That limiting result connects certain neural-network training dynamics to kernel methods. It does not establish that every finite network trains in a fixed-kernel regime, nor that learned representations are irrelevant in practical systems. Width, learning rate, parameter scaling, training duration and architecture matter. A useful reading exercise is to locate every limit and quantifier in a theorem, then ask whether an experiment actually operates in that regime.||Empirical comparisons require similar care. Match the data preprocessing, compute budget and tuning effort across baselines. Report more than a best seed. If performance differences are small, use paired observations or repeated runs with uncertainty summaries appropriate to the experimental design. An ablation should isolate a proposed mechanism; removing a component while changing parameter count or training budget may confound the interpretation.||Reproducibility requires more than releasing weights. Record data versions, split definitions, preprocessing, dependencies, random seeds, hyperparameter searches and hardware-relevant numerical choices. Random seeds alone do not guarantee bitwise determinism across devices. Distinguish reproducing the published setup from independently testing whether the claim survives reasonable changes.||For the ridge experiment, the observed validation curve is conditional on a tiny chosen dataset. It cannot establish that the same penalty will work on another population or that all models share its curve shape. A defensible report states the objective normalization, which coefficients were penalized, how the validation set was constructed and whether the penalty was chosen after inspecting it.||Your capstone is to select one claim from a linked source and write a compact audit: define the claim, list its assumptions, give the strongest supporting evidence, propose a plausible failure condition and design a test that could distinguish the claim from an alternative explanation. Save that audit in your lesson notes. There is no automatic scientific-text grading here: compare your reasoning with the source and use the quantitative checks below to verify prerequisite concepts.`,questions:[number('Let f(a,b)(x) = a(bx)², with both a and b trainable. At a = 1 and b = 2, compute the neural tangent kernel K(1, 3).',288,0,'The parameter gradient is (b²x², 2abx²) = (4x², 4x²). At x = 1 it is (4,4); at x = 3 it is (36,36). Their inner product is 4 × 36 + 4 × 36 = 288. Holding one parameter fixed would give a different kernel.'),choice('What follows directly from an infinite-width fixed-kernel theorem?',['Every finite Transformer has a fixed training kernel','The specified limit has the stated behavior under its assumptions','Feature learning never occurs'],1,'A theorem establishes its conclusion within its assumptions and limiting regime. Extending it to finite models requires additional evidence.')],sources:[sources.ntk,sources.dl]}
-];
+
+export function getCurriculum(locale = 'en') {
+  const language = String(locale).toLowerCase().split(/[-_]/)[0];
+  const copy = curriculumLocales[language] || curriculumLocales.en;
+  return {
+    topics: base.topics.map(topic => ({ ...topic, ...copy.topics?.[topic.id] })),
+    classes: base.classes.map(course => ({ ...course, levelKey: course.level, ...copy.classes?.[course.id] })),
+    lessons: base.lessons.map(lesson => {
+      const text = copy.lessons[lesson.id];
+      return {
+        ...lesson, ...text,
+        sources: lesson.sources.map(source => [...source]),
+        questions: lesson.questions.map((question, index) => ({
+          ...question, ...text.questions?.[index],
+          ...(question.options ? { options: [...(text.questions?.[index]?.options || question.options)] } : {})
+        }))
+      };
+    })
+  };
+}
+
+// Existing English imports remain compatible.
+export const { topics, classes, lessons } = getCurriculum('en');
