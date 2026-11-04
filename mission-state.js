@@ -1,6 +1,6 @@
 import {evaluateStep} from './mission-check.js';
 
-export const freshMission=()=>({version:1,index:0,answers:{},drafts:{},assisted:[],combo:0,submitted:false});
+export const freshMission=()=>({version:1,index:0,answers:{},drafts:{},assisted:[],combo:0,submitted:false,mistakes:{},hinted:[]});
 const record=x=>x&&typeof x==='object'&&!Array.isArray(x)?x:{};
 const atom=x=>typeof x==='string'?x.slice(0,120):typeof x==='boolean'?x:typeof x==='number'&&Number.isFinite(x)?x:null;
 function safeValue(x){
@@ -25,11 +25,13 @@ export function sanitizeMissionSession(mission,raw){
   answers[step.id]=value;prefix++;
  }
  for(const step of mission.steps){const value=safeValue(sourceDrafts[step.id]);if(value!==undefined&&validDraft(step,value)&&!Object.hasOwn(answers,step.id))drafts[step.id]=value}
- const assisted=Array.isArray(raw.assisted)?[...new Set(raw.assisted.filter(id=>typeof id==='string'&&mission.steps.some(s=>s.id===id&&s.phase!=='transfer')))]:[];
+ const assisted=Array.isArray(raw.assisted)?[...new Set(raw.assisted.filter(id=>typeof id==='string'&&mission.steps.some(s=>s.id===id)))]:[];
  const maxCombo=mission.steps.slice(0,prefix).filter(s=>s.kind!=='story'&&!assisted.includes(s.id)).length;
  const combo=Number.isInteger(raw.combo)&&raw.combo>=0&&raw.combo<=maxCombo?raw.combo:0;
  const index=Number.isInteger(raw.index)&&raw.index>=0?Math.min(raw.index,prefix):prefix;
- return {version:1,index,answers,drafts,assisted,combo,submitted:raw.submitted===true&&prefix===mission.steps.length};
+ const mistakes=Object.fromEntries(mission.steps.filter(s=>Number.isInteger(raw.mistakes?.[s.id])&&raw.mistakes[s.id]>=0&&raw.mistakes[s.id]<=100).map(s=>[s.id,raw.mistakes[s.id]]));
+ const hinted=Array.isArray(raw.hinted)?[...new Set(raw.hinted.filter(id=>mission.steps.some(s=>s.id===id)))]:[];
+ return {version:1,index,answers,drafts,assisted,combo,mistakes,hinted,submitted:raw.submitted===true&&prefix===mission.steps.length};
 }
 export function mergeMissionSessions(local,incoming,missions){
  const result={};for(const mission of missions){
